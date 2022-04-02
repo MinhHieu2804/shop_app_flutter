@@ -36,7 +36,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             if (dataSnapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
             } else {
-              if (dataSnapshot.connectionState != null) {
+              if (dataSnapshot.connectionState == null) {
                 return Center(
                   child: Text('An error orrcured!'),
                 );

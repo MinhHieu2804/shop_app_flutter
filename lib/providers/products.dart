@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_complete_guide/models/http_exception.dart';
 import 'dart:convert';
@@ -41,6 +43,10 @@ class Products with ChangeNotifier {
   ];
 
   // bool _showFavoritesOnly = false;
+  final String authToken;
+  final String userId;
+
+  Products(this.authToken, this.userId, this._items);
 
   List<Product> get items {
     // if (_showFavoritesOnly) {
@@ -68,14 +74,18 @@ class Products with ChangeNotifier {
   }
 
   Future<void> fetchAndSetProducts() async {
-    const url =
-        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products.json';
+    var url =
+        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products.json?auth=$authToken&orderBy="creatorId"&equalTo="$userId"';
     try {
       final response = await http.get(url);
       final extractData = jsonDecode(response.body) as Map<String, dynamic>;
       if (extractData == null) {
         return;
       }
+      url =
+          'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/userFavorites/$userId.json?auth=$authToken';
+      final favoritesResponse = await http.get(url);
+      final favResData = json.decode(favoritesResponse.body);
       final List<Product> loadedProducts = [];
       extractData.forEach((pid, prodData) {
         loadedProducts.add(Product(
@@ -83,19 +93,23 @@ class Products with ChangeNotifier {
           title: prodData['title'],
           description: prodData['description'],
           price: prodData['price'],
-          isFavorite: prodData['isFavorite'],
+          // isFavorite: false,
+          isFavorite: favResData[pid] == null
+              ? false
+              : favResData[pid]['isFavorite'] ?? false,
           imageUrl: prodData['imageUrl'],
         ));
       });
       _items = loadedProducts;
     } catch (err) {
+      log(err);
       throw err;
     }
   }
 
   Future<void> addProduct(Product product) {
-    const url =
-        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products.json';
+    final url =
+        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products.json?auth=$authToken';
     return http
         .post(
       url,
@@ -105,6 +119,7 @@ class Products with ChangeNotifier {
         'price': product.price,
         'isFavorite': product.isFavorite,
         'imageUrl': product.imageUrl,
+        'creatorId': userId,
       }),
     )
         .then((value) {
@@ -126,7 +141,7 @@ class Products with ChangeNotifier {
     final productIndex = _items.indexWhere((element) => element.id == pid);
     if (productIndex >= 0) {
       final url =
-          'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products/$pid.json';
+          'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products/$pid.json?auth=$authToken';
       await http.patch(url,
           body: json.encode({
             'title': product.title,
@@ -143,7 +158,7 @@ class Products with ChangeNotifier {
 
   Future<void> deleteProduct(String id) async {
     final url =
-        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products/$id.json';
+        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products/$id.json?auth=$authToken';
     final existingProductIndex =
         _items.indexWhere((element) => element.id == id);
     var existingProduct = _items[existingProductIndex];

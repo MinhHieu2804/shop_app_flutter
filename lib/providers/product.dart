@@ -20,13 +20,13 @@ class Product with ChangeNotifier {
     this.isFavorite = false,
   });
 
-  Future<void> toggleFavorite() async {
+  Future<void> toggleFavorite(String authToken, String userId) async {
     final oldStatus = isFavorite;
 
     isFavorite = !isFavorite;
     notifyListeners();
     final url =
-        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/products/$id.json';
+        'https://flutter-learn-cedb4-default-rtdb.firebaseio.com/userFavorites/$userId/$id.json?auth=$authToken';
     try {
       final res = await http.patch(url,
           body: json.encode({

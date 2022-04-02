@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 enum FilterOptions { Favorites, All }
 
 class ProductsOverviewScreen extends StatefulWidget {
+  static const routeName = 'products-overview';
   @override
   State<ProductsOverviewScreen> createState() => _ProductsOverviewScreenState();
 }
